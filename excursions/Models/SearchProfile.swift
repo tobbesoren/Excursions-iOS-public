@@ -32,18 +32,24 @@ class SearchProfile: Identifiable, Codable, Hashable, ObservableObject {
     init(id: Int,
          title: String,
          types: [LocationType],
-         searchString: String,
+         searchString: String = "",
          locationRestriction: LocationRestriction,
-         maxResultCount: Int,
-         searchLocation: String
+         maxResultCount: Int = 20,
+         searchLocation: String = ""
          ) {
         self.id = id
         self.title = title
         self.types = types
-        self.searchString = ""
+        self.searchString = searchString
         self.locationRestriction = locationRestriction
-        self.maxResultCount = 20
-        self.searchLocation = ""
+        if maxResultCount < 1 { // Make sure maxResultCount is in the span 1 - 20
+            self.maxResultCount = 1
+        } else if maxResultCount > 20 {
+            self.maxResultCount = 20
+        } else {
+            self.maxResultCount = maxResultCount
+        }
+        self.searchLocation = searchLocation
         self.savedDestinations = []
     }
     
@@ -56,11 +62,15 @@ class SearchProfile: Identifiable, Codable, Hashable, ObservableObject {
         id = try container.decode(Int.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         types = try container.decode([LocationType].self, forKey: .types)
-        self.searchString = ""
         locationRestriction = LocationRestriction(circle: Circle(center: Center(latitude: lat, longitude: lng), radius: range ?? 5000))
+        
+        // .savedDestinations are saved as a sub collection at Firestore and fetched separately. Here, we init an array to fetch them to.
+        self.savedDestinations = []
+        
+        // The following values are currently not saved at Firestore
+        self.searchString = ""
         self.maxResultCount = 20
         self.searchLocation = ""
-        self.savedDestinations = []
     }
 
     static func == (lhs: SearchProfile, rhs: SearchProfile) -> Bool {
@@ -102,6 +112,7 @@ class SearchProfile: Identifiable, Codable, Hashable, ObservableObject {
     func generateFirestoreJSON() -> Data? {
         encodingContext = .firestore
         let firestoreEncoder = JSONEncoder()
+        firestoreEncoder.outputFormatting = .sortedKeys // for test consistency!
                 do {
                     let jsonData = try firestoreEncoder.encode(self)
                     return jsonData
@@ -114,8 +125,8 @@ class SearchProfile: Identifiable, Codable, Hashable, ObservableObject {
     func generateSearchBodyJSON() -> Data? {
         encodingContext = .searchBody
         let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-
+        encoder.outputFormatting = .sortedKeys // for test consistency!
+        
         do {
             let jsonData = try encoder.encode(self)
             return jsonData

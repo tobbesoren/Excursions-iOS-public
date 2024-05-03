@@ -7,7 +7,14 @@
 
 import Foundation
 
-struct LocationRestriction: Codable {
+struct LocationRestriction: Codable, Equatable {
+    static func == (lhs: LocationRestriction, rhs: LocationRestriction) -> Bool {
+        return lhs.circle == rhs.circle &&
+        lhs.latitude == rhs.latitude &&
+        lhs.longitude == rhs.longitude &&
+        lhs.range == rhs.range
+    }
+    
     var circle: Circle
     var latitude: Double { circle.center.latitude }
     var longitude: Double { circle.center.longitude }
@@ -35,7 +42,11 @@ struct LocationRestriction: Codable {
     }
 }
 
-struct Circle: Codable {
+struct Circle: Codable, Equatable {
+    static func == (lhs: Circle, rhs: Circle) -> Bool {
+        return lhs.center == rhs.center && lhs.radius == rhs.radius
+    }
+    
     let center: Center
     var radius: Double
     
@@ -65,7 +76,7 @@ struct Circle: Codable {
     }
 }
 
-struct Center: Codable {
+struct Center: Codable, Equatable {
     let latitude: Double
     let longitude: Double
     

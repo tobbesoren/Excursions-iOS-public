@@ -12,6 +12,12 @@ import SwiftUI
 class PlacesApiManager: ObservableObject {
     static let shared = PlacesApiManager()
     
+    private let session: URLSession
+        
+        init(session: URLSession = .shared) {
+            self.session = session
+        }
+    
     func fetchPlace(id: String, completion: @escaping (Place?) -> Void) -> Void {
         guard let url = URL(string: "\(APIEndpoint.placeDetails.urlString)\(id)") else {
             print("Error getting API endpoint")
@@ -24,7 +30,7 @@ class PlacesApiManager: ObservableObject {
         request.setValue(ApiKeyEnvironment.apiKey, forHTTPHeaderField: "X-Goog-Api-Key")
         request.setValue("displayName,id,location,reviews", forHTTPHeaderField: "X-Goog-FieldMask")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        session.dataTask(with: request) { data, response, error in
             if let data {
                 if String(data: data, encoding: .utf8) == nil {
                     print("Error converting place data to string.")
@@ -62,7 +68,7 @@ class PlacesApiManager: ObservableObject {
             
             request.httpBody = jsonPayload
             
-            URLSession.shared.dataTask(with: request) { data, response, error in
+            session.dataTask(with: request) { data, response, error in
                 if let data = data {
                     if String(data: data, encoding: .utf8) == nil {
                         print("Error converting data to string.")

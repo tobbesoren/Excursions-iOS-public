@@ -7,7 +7,11 @@
 
 import Foundation
 
-class LocationType: Identifiable, Codable, ObservableObject {
+class LocationType: Identifiable, Codable, ObservableObject, Equatable {
+    static func == (lhs: LocationType, rhs: LocationType) -> Bool {
+        return lhs.id == rhs.id && lhs.type == rhs.type
+    }
+    
     private let type: PlaceTypeEnum
     var jsonName: String { type.rawValue }
     @Published var isChecked = true
