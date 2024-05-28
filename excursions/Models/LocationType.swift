@@ -12,7 +12,7 @@ class LocationType: Identifiable, Codable, ObservableObject, Equatable {
         return lhs.id == rhs.id && lhs.type == rhs.type
     }
     
-    private let type: PlaceTypeEnum
+    private let type: PlaceTypeEnum // This makes sure the names are valid, otherwise they are set to 'unknown'
     var jsonName: String { type.rawValue }
     @Published var isChecked = true
     var formattedName: String { type.name }
