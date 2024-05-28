@@ -7,7 +7,14 @@
 
 import Foundation
 
-struct LocationRestriction: Codable {
+struct LocationRestriction: Codable, Equatable {
+    static func == (lhs: LocationRestriction, rhs: LocationRestriction) -> Bool {
+        return lhs.circle == rhs.circle &&
+        lhs.latitude == rhs.latitude &&
+        lhs.longitude == rhs.longitude &&
+        lhs.range == rhs.range
+    }
+    
     var circle: Circle
     var latitude: Double { circle.center.latitude }
     var longitude: Double { circle.center.longitude }
@@ -35,7 +42,11 @@ struct LocationRestriction: Codable {
     }
 }
 
-struct Circle: Codable {
+struct Circle: Codable, Equatable {
+    static func == (lhs: Circle, rhs: Circle) -> Bool {
+        return lhs.center == rhs.center && lhs.radius == rhs.radius
+    }
+    
     let center: Center
     var radius: Double
     
@@ -49,6 +60,7 @@ struct Circle: Codable {
         case center
         case radius
     }
+    
     
     // Implement encode(to:) method to encode properties to Firestore-compatible structure
     func encode(to encoder: Encoder) throws {
@@ -65,13 +77,22 @@ struct Circle: Codable {
     }
 }
 
-struct Center: Codable {
+struct Center: Codable, Equatable {
     let latitude: Double
     let longitude: Double
     
     init(latitude: Double, longitude: Double) {
-        self.latitude = latitude
-        self.longitude = longitude
+        if (-90...90).contains(latitude) {
+            self.latitude = latitude
+        } else {
+            self.latitude = 0
+        }
+        
+        if (-180...180).contains(longitude) {
+            self.longitude = longitude
+        } else {
+            self.longitude = 0
+        }
     }
     
     // Implement custom CodingKeys to match Firestore keys
@@ -88,9 +109,39 @@ struct Center: Codable {
     }
     
     // Implement init(from:) initializer to reconstruct Center from Firestore data
+//    init(from decoder: Decoder) throws {
+//        let container = try decoder.container(keyedBy: CodingKeys.self)
+//        latitude = try container.decode(Double.self, forKey: .latitude)
+//        longitude = try container.decode(Double.self, forKey: .longitude)
+//    }
+    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        latitude = try container.decode(Double.self, forKey: .latitude)
-        longitude = try container.decode(Double.self, forKey: .longitude)
+        
+        do {
+            let decodedLatitude = try container.decode(Double.self, forKey: .latitude)
+            if (-90...90).contains(decodedLatitude) {
+                latitude = decodedLatitude
+            } else {
+                latitude = 0.0
+                print("Latitude value \(decodedLatitude) is out of range. Setting to 0.")
+            }
+        } catch {
+            print("Error decoding latitude:", error)
+            latitude = 0.0 // Set latitude to 0 if decoding fails
+        }
+        
+        do {
+            let decodedLongitude = try container.decode(Double.self, forKey: .longitude)
+            if (-180...180).contains(decodedLongitude) {
+                longitude = decodedLongitude
+            } else {
+                longitude = 0.0
+                print("Longitude value \(decodedLongitude) is out of range. Setting to 0.")
+            }
+        } catch {
+            print("Error decoding longitude:", error)
+            longitude = 0.0 // Set longitude to 0 if decoding fails
+        }
     }
 }
